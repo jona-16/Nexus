@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NEXUS — Medidas ↔ Galones (Local)</title>
+  <meta name="description" content="NEXUS: plataforma local para convertir medidas (Depth) a galones (Capacity), con tabla, búsqueda e historial. Todo guardado en el dispositivo." />
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f1a30; --muted:#93a4c7; --text:#eef3ff;
+      --line:rgba(255,255,255,.08); --ok:#2ee59d; --warn:#ffd166; --bad:#ff4d6d;
+      --btn:#1d2f55; --btn2:#142343;
+      --shadow: 0 12px 28px rgba(0,0,0,.35);
+      --radius: 18px;
+      font-synthesis-weight: none;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(900px 600px at 10% 0%, rgba(46,229,157,.14), transparent 60%),
+                  radial-gradient(900px 600px at 90% 20%, rgba(93,150,255,.14), transparent 65%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(10px);
+      background: rgba(11,18,32,.72);
+      border-bottom:1px solid var(--line);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:16px}
+    .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+    .brand{display:flex; align-items:center; gap:10px}
+    .logo{
+      width:38px; height:38px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(46,229,157,.95), rgba(93,150,255,.95));
+      box-shadow: var(--shadow);
+    }
+    h1{margin:0; font-size:18px; letter-spacing:.4px}
+    .pill{
+      font-size:12px; color:var(--muted);
+      border:1px solid var(--line); padding:6px 10px; border-radius:999px;
+      background: rgba(255,255,255,.03);
+    }
+    nav{display:flex; gap:8px; flex-wrap:wrap}
+    .tab{
+      cursor:pointer; user-select:none;
+      padding:10px 12px; border-radius:12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      font-weight:600; font-size:13px;
+    }
+    .tab.active{background: rgba(46,229,157,.14); border-color: rgba(46,229,157,.35)}
+    main{padding:18px 16px 70px}
+    .grid{display:grid; gap:14px}
+    @media (min-width: 920px){ .grid.two{grid-template-columns: 1.2fr .8fr} }
+    .card{
+      background: rgba(15,26,48,.72);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:14px;
+      box-shadow: var(--shadow);
+    }
+    .card h2{margin:0 0 10px; font-size:16px}
+    .muted{color:var(--muted); font-size:13px}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+    input, select, textarea{
+      width:100%;
+      padding:12px 12px;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{min-height:120px; resize:vertical}
+    .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+    button{
+      cursor:pointer; border:none;
+      padding:10px 12px; border-radius: 12px;
+      background: var(--btn);
+      color: var(--text);
+      font-weight:700; font-size:13px;
+      border: 1px solid var(--line);
+    }
+    button.secondary{background: var(--btn2)}
+    button.danger{background: rgba(255,77,109,.18); border-color: rgba(255,77,109,.35)}
+    button.ok{background: rgba(46,229,157,.18); border-color: rgba(46,229,157,.35)}
+    button:disabled{opacity:.55; cursor:not-allowed}
+    .result{
+      display:grid; gap:10px;
+      padding:14px; border-radius: 16px;
+      border: 1px solid rgba(93,150,255,.25);
+      background: rgba(93,150,255,.08);
+    }
+    .big{
+      font-size:22px; font-weight:900; letter-spacing:.3px;
+    }
+    .kv{display:flex; gap:10px; flex-wrap:wrap}
+    .tag{
+      padding:6px 10px; border-radius:999px;
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      font-size:12px; color:var(--muted);
+    }
+    table{width:100%; border-collapse: collapse; margin-top:10px}
+    th, td{
+      padding:10px 8px;
+      border-bottom:1px solid var(--line);
+      text-align:left; font-size:13px;
+    }
+    th{color: var(--muted); font-weight:700; font-size:12px}
+    .tools{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .right{margin-left:auto}
+    .hint{font-size:12px; color:var(--muted); line-height:1.35}
+    .toast{
+      position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+      background: rgba(15,26,48,.92);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      display:none;
+      max-width: 92vw;
+      z-index: 50;
+      font-size: 13px;
+    }
+    .split{display:grid; gap:14px}
+    @media (min-width: 920px){ .split{grid-template-columns: 1fr 1fr} }
+    .small{font-size:12px}
+    .oktext{color: var(--ok)}
+    .warntext{color: var(--warn)}
+    .badtext{color: var(--bad)}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="wrap row">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <h1>NEXUS</h1>
+        <div class="muted small">Medidas (Depth) ↔ Galones (Capacity) • Todo local</div>
+      </div>
+    </div>
+    <div class="pill right" id="storageBadge">Almacenamiento: verificando…</div>
+  </div>
+  <div class="wrap row" style="padding-top:0">
+    <nav>
+      <div class="tab active" data-tab="buscar">Buscar</div>
+      <div class="tab" data-tab="tabla">Tabla</div>
+      <div class="tab" data-tab="historial">Historial</div>
+      <div class="tab" data-tab="importar">Importar/Backup</div>
+      <div class="tab" data-tab="ajustes">Ajustes</div>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- BUSCAR -->
+  <section class="grid two" id="tab-buscar">
+    <div class="card">
+      <h2>🔎 Búsqueda rápida (Cuadre)</h2>
+      <div class="muted">Elige combustible, luego busca por <b>medida</b> o por <b>galones</b>.</div>
+
+      <label>Combustible</label>
+      <select id="qFuel">
+        <option value="GAS_REG">Gasolina Regular</option>
+        <option value="GAS_PREM">Gasolina Premium</option>
+        <option value="DSL_REG">Gasoil Regular</option>
+        <option value="DSL_PREM">Gasoil Premium</option>
+      </select>
+
+      <label>Modo de búsqueda</label>
+      <select id="qMode">
+        <option value="DEPTH_TO_GAL">Medida (Depth) → Galones</option>
+        <option value="GAL_TO_DEPTH">Galones (Capacity) → Medida</option>
+      </select>
+
+      <label id="qLabel">Ingresa la medida (Depth en pulgadas)</label>
+      <input id="qValue" inputmode="decimal" placeholder="Ej: 9.250" />
+
+      <div class="btns">
+        <button class="ok" id="btnSearch">Buscar</button>
+        <button class="secondary" id="btnSaveToHistory" disabled>Guardar en historial</button>
+        <button class="secondary" id="btnClear">Limpiar</button>
+      </div>
+
+      <div class="hint" style="margin-top:10px">
+        • Si la medida/galones no existe exacto, NEXUS puede devolver el <b>valor más cercano</b> (configurable en Ajustes).<br>
+        • Todo queda guardado en tu PC/Android (IndexedDB).
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📌 Resultado</h2>
+      <div id="resultBox" class="result" style="display:none">
+        <div class="big" id="resultBig">—</div>
+        <div class="kv">
+          <span class="tag" id="resultFuel">—</span>
+          <span class="tag" id="resultExact">—</span>
+          <span class="tag" id="resultWhen">—</span>
+        </div>
+        <div class="muted" id="resultDetail">—</div>
+      </div>
+
+      <div id="noResult" class="muted">Haz una búsqueda para ver el resultado aquí.</div>
+    </div>
+  </section>
+
+  <!-- TABLA -->
+  <section class="card" id="tab-tabla" style="display:none">
+    <div class="row">
+      <div>
+        <h2>📊 Tabla de conversión (Depth ↔ Capacity)</h2>
+        <div class="muted">Aquí agregas/editar/eliminas filas por combustible.</div>
+      </div>
+      <div class="right tools">
+        <select id="tFuel">
+          <option value="GAS_REG">Gasolina Regular</option>
+          <option value="GAS_PREM">Gasolina Premium</option>
+          <option value="DSL_REG">Gasoil Regular</option>
+          <option value="DSL_PREM">Gasoil Premium</option>
+        </select>
+        <input id="tSearch" placeholder="Buscar (medida o galones)..." />
+      </div>
+    </div>
+
+    <div class="split" style="margin-top:10px">
+      <div class="card" style="background:rgba(255,255,255,.02)">
+        <h2 style="margin-top:0">➕ Agregar / ✏️ Editar fila</h2>
+        <div class="muted">Depth = medida • Capacity = galones</div>
+        <label>Medida (Depth)</label>
+        <input id="fDepth" inputmode="decimal" placeholder="Ej: 9.250" />
+        <label>Galones (Capacity)</label>
+        <input id="fGallons" inputmode="decimal" placeholder="Ej: 260" />
+        <input type="hidden" id="fId" />
+        <div class="btns">
+          <button class="ok" id="btnUpsert">Guardar fila</button>
+          <button class="secondary" id="btnResetForm">Limpiar</button>
+          <button class="danger" id="btnDeleteRow" disabled>Eliminar</button>
+        </div>
+        <div class="hint">Tip: puedes pegar cientos/miles de filas desde Importar/Backup.</div>
+      </div>
+
+      <div class="card" style="background:rgba(255,255,255,.02)">
+        <h2 style="margin-top:0">📋 Vista rápida</h2>
+        <div class="muted" id="tableStats">—</div>
+        <div style="max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:14px; margin-top:10px">
+          <table>
+            <thead>
+              <tr>
+                <th>Depth (Medida)</th>
+                <th>Capacity (Galones)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section class="card" id="tab-historial" style="display:none">
+    <div class="row">
+      <div>
+        <h2>📚 Historial (local)</h2>
+        <div class="muted">Registros guardados desde las búsquedas.</div>
+      </div>
+      <div class="right tools">
+        <select id="hFuel">
+          <option value="">Todos</option>
+          <option value="GAS_REG">Gasolina Regular</option>
+          <option value="GAS_PREM">Gasolina Premium</option>
+          <option value="DSL_REG">Gasoil Regular</option>
+          <option value="DSL_PREM">Gasoil Premium</option>
+        </select>
+        <input id="hSearch" placeholder="Buscar (medida/galones)..." />
+        <button class="danger" id="btnClearHistory">Borrar historial</button>
+      </div>
+    </div>
+
+    <div style="max-height:520px; overflow:auto; border:1px solid var(--line); border-radius:14px; margin-top:10px">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Combustible</th>
+            <th>Medida</th>
+            <th>Galones</th>
+            <th>Exacto</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- IMPORTAR / BACKUP -->
+  <section class="card" id="tab-importar" style="display:none">
+    <h2>📥 Importar tabla / 💾 Backup</h2>
+    <div class="muted">
+      Pega datos para cargar masivo. Formato recomendado: <span class="mono">depth,gallons</span> por línea.<br>
+      También acepta <span class="mono">depth → gallons</span> o separados por espacio/tab.
+    </div>
+
+    <div class="split" style="margin-top:10px">
+      <div class="card" style="background:rgba(255,255,255,.02)">
+        <h2 style="margin-top:0">Importar</h2>
+        <label>Combustible destino</label>
+        <select id="iFuel">
+          <option value="GAS_REG">Gasolina Regular</option>
+          <option value="GAS_PREM">Gasolina Premium</option>
+          <option value="DSL_REG">Gasoil Regular</option>
+          <option value="DSL_PREM">Gasoil Premium</option>
+        </select>
+
+        <label>Datos</label>
+        <textarea id="iText" placeholder="Ej:
+9.125,255
+9.250,260
+9.375,265
+..."></textarea>
+
+        <div class="btns">
+          <button class="ok" id="btnImport">Importar (agregar/actualizar)</button>
+          <button class="secondary" id="btnImportReplace">Importar (REEMPLAZAR tabla)</button>
+          <button class="secondary" id="btnDemo">Cargar demo</button>
+        </div>
+        <div class="hint">
+          • “Agregar/actualizar” crea filas nuevas y actualiza si ya existe ese Depth.<br>
+          • “Reemplazar” borra la tabla de ese combustible y vuelve a crearla.
+        </div>
+      </div>
+
+      <div class="card" style="background:rgba(255,255,255,.02)">
+        <h2 style="margin-top:0">Backup / Restaurar</h2>
+        <div class="muted">Exporta todo (tablas + historial + ajustes) a un archivo JSON para moverlo entre PC ↔ Android.</div>
+
+        <div class="btns">
+          <button class="ok" id="btnExport">Exportar backup (.json)</button>
+          <label style="margin:0; width:100%">
+            <div class="muted small" style="margin-bottom:6px">Restaurar backup (selecciona archivo .json)</div>
+            <input type="file" id="fileImport" accept="application/json" />
+          </label>
+          <button class="danger" id="btnWipeAll">Borrar TODO (tablas + historial)</button>
+        </div>
+
+        <div class="hint">
+          Esto te permite usar NEXUS en PC y luego llevar los datos al Android (o viceversa) sin nube.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AJUSTES -->
+  <section class="card" id="tab-ajustes" style="display:none">
+    <h2>⚙️ Ajustes</h2>
+    <div class="muted">Cómo se comporta la búsqueda cuando no existe un valor exacto.</div>
+
+    <label>Modo de coincidencia</label>
+    <select id="sMatchMode">
+      <option value="NEAREST">Permitir valor más cercano</option>
+      <option value="EXACT_ONLY">Solo exacto (si no existe, no devuelve nada)</option>
+    </select>
+
+    <label>Tolerancia para búsqueda por galones (±)</label>
+    <input id="sTolerance" inputmode="decimal" placeholder="Ej: 0 (exacto) o 1 o 2" />
+
+    <div class="btns">
+      <button class="ok" id="btnSaveSettings">Guardar ajustes</button>
+      <button class="secondary" id="btnResetSettings">Restablecer</button>
+    </div>
+
+    <div class="hint">
+      • “Más cercano” es útil si el operador marca un número que cae entre dos filas.<br>
+      • En tanques se suele trabajar con incrementos fijos; si tu tabla es exacta, puedes dejar exacto o tolerancia baja.
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===========================
+   NEXUS — Single file app
+   - IndexedDB (local)
+   - Tablas por combustible
+   - Búsqueda Depth↔Gallons
+   - Historial
+   - Import/Export
+=========================== */
+
+const FUEL_LABELS = {
+  GAS_REG: "Gasolina Regular",
+  GAS_PREM:"Gasolina Premium",
+  DSL_REG: "Gasoil Regular",
+  DSL_PREM:"Gasoil Premium"
+};
+
+const DB_NAME = "nexus_db";
+const DB_VERSION = 1;
+let db = null;
+
+const SETTINGS_DEFAULT = { matchMode: "NEAREST", tolerance: 0 };
+
+function $(id){ return document.getElementById(id); }
+function toast(msg){
+  const t = $("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(()=> t.style.display="none", 2600);
+}
+function num(v){
+  const x = (""+v).trim().replace(",", ".");
+  if(!x) return NaN;
+  return Number(x);
+}
+function fmt(n){
+  if (Number.isNaN(n)) return "—";
+  // Mantener decimales si los trae
+  return (Math.round(n*1000)/1000).toString();
+}
+function nowISO(){ return new Date().toISOString(); }
+function shortDT(iso){
+  const d = new Date(iso);
+  return d.toLocaleString();
+}
+
+async function initStorageBadge(){
+  const badge = $("storageBadge");
+  try{
+    if(navigator.storage && navigator.storage.estimate){
+      const est = await navigator.storage.estimate();
+      const used = est.usage || 0;
+      const quota = est.quota || 0;
+      const usedMB = (used/1024/1024).toFixed(1);
+      const quotaMB = (quota/1024/1024).toFixed(1);
+      badge.textContent = `Almacenamiento local: ${usedMB} MB usados / ${quotaMB} MB disponibles`;
+    }else{
+      badge.textContent = "Almacenamiento local: IndexedDB activo";
+    }
+  }catch(e){
+    badge.textContent = "Almacenamiento local: activo";
+  }
+}
+
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (ev)=>{
+      const db = req.result;
+
+      // Tabla de conversión
+      // keyPath: "id" autoincrement
+      // índices: byFuelDepth (fuel+depth), byFuelGallons (fuel+gallons)
+      const conv = db.createObjectStore("conversion", { keyPath:"id", autoIncrement:true });
+      conv.createIndex("byFuel", "fuel", { unique:false });
+      conv.createIndex("byFuelDepth", ["fuel","depth"], { unique:true });
+      conv.createIndex("byFuelGallons", ["fuel","gallons"], { unique:false });
+
+      // Historial
+      const hist = db.createObjectStore("history", { keyPath:"id", autoIncrement:true });
+      hist.createIndex("byWhen", "when", { unique:false });
+      hist.createIndex("byFuel", "fuel", { unique:false });
+      hist.createIndex("byFuelWhen", ["fuel","when"], { unique:false });
+
+      // Ajustes
+      db.createObjectStore("settings", { keyPath:"key" });
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+function tx(storeNames, mode="readonly"){
+  return db.transaction(storeNames, mode);
+}
+
+async function getSetting(){
+  const t = tx(["settings"]);
+  const store = t.objectStore("settings");
+  return new Promise((resolve)=>{
+    const r = store.get("app");
+    r.onsuccess = ()=>{
+      resolve(r.result ? r.result.value : null);
+    };
+    r.onerror = ()=> resolve(null);
+  });
+}
+
+async function saveSetting(value){
+  const t = tx(["settings"], "readwrite");
+  const store = t.objectStore("settings");
+  return new Promise((resolve, reject)=>{
+    const r = store.put({ key:"app", value });
+    r.onsuccess = ()=> resolve(true);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+
+async function ensureSettings(){
+  const s = await getSetting();
+  if(!s){
+    await saveSetting(SETTINGS_DEFAULT);
+    return SETTINGS_DEFAULT;
+  }
+  return { ...SETTINGS_DEFAULT, ...s };
+}
+
+/* ======= Conversion CRUD ======= */
+async function upsertConversionRow(fuel, depth, gallons){
+  // Unique by (fuel, depth). If exists, update.
+  const t = tx(["conversion"], "readwrite");
+  const store = t.objectStore("conversion");
+  const idx = store.index("byFuelDepth");
+
+  return new Promise((resolve, reject)=>{
+    const getReq = idx.get([fuel, depth]);
+    getReq.onsuccess = ()=>{
+      const existing = getReq.result;
+      if(existing){
+        existing.gallons = gallons;
+        const putReq = store.put(existing);
+        putReq.onsuccess = ()=> resolve({ updated:true, id: existing.id });
+        putReq.onerror = ()=> reject(putReq.error);
+      }else{
+        const addReq = store.add({ fuel, depth, gallons });
+        addReq.onsuccess = ()=> resolve({ updated:false, id: addReq.result });
+        addReq.onerror = ()=> reject(addReq.error);
+      }
+    };
+    getReq.onerror = ()=> reject(getReq.error);
+  });
+}
+
+async function deleteConversionRowById(id){
+  const t = tx(["conversion"], "readwrite");
+  const store = t.objectStore("conversion");
+  return new Promise((resolve, reject)=>{
+    const r = store.delete(id);
+    r.onsuccess = ()=> resolve(true);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+
+async function getConversionRowById(id){
+  const t = tx(["conversion"]);
+  const store = t.objectStore("conversion");
+  return new Promise((resolve)=>{
+    const r = store.get(id);
+    r.onsuccess = ()=> resolve(r.result || null);
+    r.onerror = ()=> resolve(null);
+  });
+}
+
+async function listConversionRows(fuel){
+  const t = tx(["conversion"]);
+  const store = t.objectStore("conversion");
+  const idx = store.index("byFuel");
+  return new Promise((resolve)=>{
+    const out = [];
+    const r = idx.openCursor(IDBKeyRange.only(fuel));
+    r.onsuccess = ()=>{
+      const c = r.result;
+      if(!c) return resolve(out.sort((a,b)=> a.depth - b.depth));
+      out.push(c.value);
+      c.continue();
+    };
+    r.onerror = ()=> resolve(out);
+  });
+}
+
+async function clearFuelTable(fuel){
+  const rows = await listConversionRows(fuel);
+  const t = tx(["conversion"], "readwrite");
+  const store = t.objectStore("conversion");
+  return new Promise((resolve)=>{
+    let i=0;
+    (function delNext(){
+      if(i>=rows.length) return resolve(true);
+      store.delete(rows[i++].id).onsuccess = delNext;
+    })();
+  });
+}
+
+/* ======= Search logic ======= */
+async function findByDepth(fuel, depth, settings){
+  const t = tx(["conversion"]);
+  const store = t.objectStore("conversion");
+  const idx = store.index("byFuelDepth");
+  const exact = await new Promise((resolve)=>{
+    const r = idx.get([fuel, depth]);
+    r.onsuccess = ()=> resolve(r.result || null);
+    r.onerror = ()=> resolve(null);
+  });
+  if(exact) return { row: exact, exact:true };
+
+  if(settings.matchMode === "EXACT_ONLY") return { row:null, exact:false };
+
+  // NEAREST: scan rows in fuel and pick nearest by depth
+  const rows = await listConversionRows(fuel);
+  if(!rows.length) return { row:null, exact:false };
+  let best = rows[0], bestDist = Math.abs(rows[0].depth - depth);
+  for(const r of rows){
+    const d = Math.abs(r.depth - depth);
+    if(d < bestDist){ best=r; bestDist=d; }
+  }
+  return { row: best, exact:false, dist: bestDist };
+}
+
+async function findByGallons(fuel, gallons, settings){
+  const rows = await listConversionRows(fuel);
+  if(!rows.length) return { row:null, exact:false };
+
+  // Exact first
+  const exact = rows.find(r => r.gallons === gallons);
+  if(exact) return { row: exact, exact:true };
+
+  if(settings.matchMode === "EXACT_ONLY" && settings.tolerance === 0) return { row:null, exact:false };
+
+  // NEAREST (or tolerance)
+  let best = rows[0], bestDist = Math.abs(rows[0].gallons - gallons);
+  for(const r of rows){
+    const d = Math.abs(r.gallons - gallons);
+    if(d < bestDist){ best=r; bestDist=d; }
+  }
+
+  const tol = Number(settings.tolerance || 0);
+  if(settings.matchMode === "EXACT_ONLY" && tol > 0){
+    if(bestDist <= tol) return { row: best, exact:false, dist: bestDist };
+    return { row:null, exact:false };
+  }
+  return { row: best, exact:false, dist: bestDist };
+}
+
+/* ======= History ======= */
+async function addHistory(entry){
+  const t = tx(["history"], "readwrite");
+  const store = t.objectStore("history");
+  return new Promise((resolve, reject)=>{
+    const r = store.add(entry);
+    r.onsuccess = ()=> resolve(r.result);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+async function listHistory(){
+  const t = tx(["history"]);
+  const store = t.objectStore("history");
+  return new Promise((resolve)=>{
+    const out = [];
+    const r = store.openCursor();
+    r.onsuccess = ()=>{
+      const c = r.result;
+      if(!c) return resolve(out.sort((a,b)=> (b.when||"").localeCompare(a.when||"")));
+      out.push(c.value);
+      c.continue();
+    };
+    r.onerror = ()=> resolve(out);
+  });
+}
+async function clearHistory(){
+  const t = tx(["history"], "readwrite");
+  const store = t.objectStore("history");
+  return new Promise((resolve, reject)=>{
+    const r = store.clear();
+    r.onsuccess = ()=> resolve(true);
+    r.onerror = ()=> reject(r.error);
+  });
+}
+
+/* ======= UI Tabs ======= */
+function setTab(name){
+  document.querySelectorAll(".tab").forEach(el=>{
+    el.classList.toggle("active", el.dataset.tab === name);
+  });
+  ["buscar","tabla","historial","importar","ajustes"].forEach(t=>{
+    const sec = $("tab-"+t);
+    sec.style.display = (t===name) ? "" : "none";
+  });
+}
+
+document.querySelectorAll(".tab").forEach(el=>{
+  el.addEventListener("click", ()=>{
+    setTab(el.dataset.tab);
+    if(el.dataset.tab==="tabla") renderTable();
+    if(el.dataset.tab==="historial") renderHistory();
+    if(el.dataset.tab==="ajustes") loadSettingsUI();
+  });
+});
+
+/* ======= Buscar UI ======= */
+let lastSearch = null;
+
+function updateQueryLabel(){
+  const mode = $("qMode").value;
+  $("qLabel").textContent = (mode==="DEPTH_TO_GAL")
+    ? "Ingresa la medida (Depth en pulgadas)"
+    : "Ingresa los galones (Capacity)";
+  $("qValue").placeholder = (mode==="DEPTH_TO_GAL") ? "Ej: 9.250" : "Ej: 260";
+}
+
+$("qMode").addEventListener("change", updateQueryLabel);
+updateQueryLabel();
+
+$("btnClear").addEventListener("click", ()=>{
+  $("qValue").value = "";
+  $("resultBox").style.display = "none";
+  $("noResult").style.display = "";
+  $("btnSaveToHistory").disabled = true;
+  lastSearch = null;
+});
+
+$("btnSearch").addEventListener("click", async ()=>{
+  const fuel = $("qFuel").value;
+  const mode = $("qMode").value;
+  const v = num($("qValue").value);
+  if(Number.isNaN(v)){
+    toast("Escribe un número válido.");
+    return;
+  }
+
+  const settings = await ensureSettings();
+
+  let res;
+  if(mode==="DEPTH_TO_GAL"){
+    res = await findByDepth(fuel, v, settings);
+  }else{
+    res = await findByGallons(fuel, v, settings);
+  }
+
+  if(!res.row){
+    $("resultBox").style.display = "none";
+    $("noResult").style.display = "";
+    $("btnSaveToHistory").disabled = true;
+    toast("No se encontró coincidencia.");
+    lastSearch = null;
+    return;
+  }
+
+  const row = res.row;
+  const exact = !!res.exact;
+  const when = nowISO();
+
+  const big = (mode==="DEPTH_TO_GAL")
+    ? `${fmt(row.depth)}"  →  ${fmt(row.gallons)} gal`
+    : `${fmt(row.gallons)} gal  →  ${fmt(row.depth)}"`;
+
+  $("resultBig").textContent = big;
+  $("resultFuel").textContent = FUEL_LABELS[fuel] || fuel;
+  $("resultExact").textContent = exact ? "Coincidencia EXACTA" : "Coincidencia CERCANA";
+  $("resultExact").className = "tag " + (exact ? "oktext" : "warntext");
+  $("resultWhen").textContent = new Date().toLocaleString();
+
+  const detail = exact
+    ? `Encontrado exactamente en la tabla para ${FUEL_LABELS[fuel]}.`
+    : `No existe exacto. Se usó el valor más cercano de la tabla. Diferencia: ${
+        mode==="DEPTH_TO_GAL" ? fmt(res.dist) + ' pulgadas' : fmt(res.dist) + ' gal'
+      }.`;
+
+  $("resultDetail").textContent = detail;
+
+  $("noResult").style.display = "none";
+  $("resultBox").style.display = "";
+  $("btnSaveToHistory").disabled = false;
+
+  lastSearch = {
+    fuel,
+    mode,
+    input: v,
+    depth: row.depth,
+    gallons: row.gallons,
+    exact,
+    when
+  };
+});
+
+$("btnSaveToHistory").addEventListener("click", async ()=>{
+  if(!lastSearch){ toast("No hay búsqueda para guardar."); return; }
+  await addHistory({
+    when: lastSearch.when,
+    fuel: lastSearch.fuel,
+    depth: lastSearch.depth,
+    gallons: lastSearch.gallons,
+    exact: lastSearch.exact ? 1 : 0
+  });
+  toast("Guardado en historial.");
+});
+
+/* ======= Tabla UI ======= */
+$("tFuel").addEventListener("change", renderTable);
+$("tSearch").addEventListener("input", renderTable);
+$("btnResetForm").addEventListener("click", resetRowForm);
+
+function resetRowForm(){
+  $("fId").value = "";
+  $("fDepth").value = "";
+  $("fGallons").value = "";
+  $("btnDeleteRow").disabled = true;
+}
+
+$("btnUpsert").addEventListener("click", async ()=>{
+  const fuel = $("tFuel").value;
+  const depth = num($("fDepth").value);
+  const gallons = num($("fGallons").value);
+
+  if(Number.isNaN(depth) || Number.isNaN(gallons)){
+    toast("Completa medida y galones con números válidos.");
+    return;
+  }
+  if(depth < 0 || gallons < 0){
+    toast("No se permiten valores negativos.");
+    return;
+  }
+
+  await upsertConversionRow(fuel, depth, gallons);
+  toast("Fila guardada.");
+  resetRowForm();
+  await renderTable();
+});
+
+$("btnDeleteRow").addEventListener("click", async ()=>{
+  const id = Number($("fId").value);
+  if(!id) return;
+  if(!confirm("¿Eliminar esta fila?")) return;
+  await deleteConversionRowById(id);
+  toast("Fila eliminada.");
+  resetRowForm();
+  await renderTable();
+});
+
+async function renderTable(){
+  const fuel = $("tFuel").value;
+  const q = ($("tSearch").value || "").trim().toLowerCase();
+
+  const rows = await listConversionRows(fuel);
+  const filtered = !q ? rows : rows.filter(r =>
+    (""+r.depth).includes(q) || (""+r.gallons).includes(q)
+  );
+
+  $("tableStats").textContent = `${FUEL_LABELS[fuel]} • ${rows.length} filas (mostrando ${filtered.length})`;
+
+  const body = $("tableBody");
+  body.innerHTML = "";
+
+  for(const r of filtered.slice(0, 1200)){ // proteger UI si son miles
+    const tr = document.createElement("tr");
+    const td1 = document.createElement("td"); td1.textContent = fmt(r.depth);
+    const td2 = document.createElement("td"); td2.textContent = fmt(r.gallons);
+    const td3 = document.createElement("td");
+    const b = document.createElement("button");
+    b.textContent = "Editar";
+    b.className = "secondary";
+    b.style.padding = "8px 10px";
+    b.addEventListener("click", ()=>{
+      $("fId").value = r.id;
+      $("fDepth").value = r.depth;
+      $("fGallons").value = r.gallons;
+      $("btnDeleteRow").disabled = false;
+      toast("Fila cargada para editar.");
+    });
+    td3.appendChild(b);
+    tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+    body.appendChild(tr);
+  }
+}
+
+/* ======= Historial UI ======= */
+$("hFuel").addEventListener("change", renderHistory);
+$("hSearch").addEventListener("input", renderHistory);
+
+$("btnClearHistory").addEventListener("click", async ()=>{
+  if(!confirm("¿Borrar TODO el historial?")) return;
+  await clearHistory();
+  toast("Historial borrado.");
+  renderHistory();
+});
+
+async function renderHistory(){
+  const fuel = $("hFuel").value;
+  const q = ($("hSearch").value || "").trim().toLowerCase();
+  const rows = await listHistory();
+
+  const filtered = rows.filter(r=>{
+    if(fuel && r.fuel !== fuel) return false;
+    if(!q) return true;
+    return (""+r.depth).includes(q) || (""+r.gallons).includes(q);
+  });
+
+  const body = $("historyBody");
+  body.innerHTML = "";
+  for(const r of filtered.slice(0, 2000)){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${shortDT(r.when)}</td>
+      <td>${FUEL_LABELS[r.fuel] || r.fuel}</td>
+      <td>${fmt(r.depth)}</td>
+      <td>${fmt(r.gallons)}</td>
+      <td>${r.exact ? '<span class="oktext">Sí</span>' : '<span class="warntext">No</span>'}</td>
+    `;
+    body.appendChild(tr);
+  }
+}
+
+/* ======= Import / Backup ======= */
+function parseLines(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const rows = [];
+  for(const line of lines){
+    // accept: "a,b" | "a b" | "a\tb" | "a → b" | "a->b"
+    let s = line.replace("→", ",").replace("->", ",").replace("|", ",");
+    s = s.replace(/\s+/g, " "); // normalize
+    let parts;
+    if(s.includes(",")) parts = s.split(",").map(x=>x.trim());
+    else parts = s.split(" ").map(x=>x.trim());
+    if(parts.length < 2) continue;
+    const d = num(parts[0]);
+    const g = num(parts[1]);
+    if(Number.isNaN(d) || Number.isNaN(g)) continue;
+    rows.push({ depth:d, gallons:g });
+  }
+  return rows;
+}
+
+$("btnImport").addEventListener("click", async ()=>{
+  const fuel = $("iFuel").value;
+  const text = $("iText").value || "";
+  const rows = parseLines(text);
+  if(!rows.length){ toast("No se detectaron filas válidas."); return; }
+
+  let n=0;
+  for(const r of rows){
+    await upsertConversionRow(fuel, r.depth, r.gallons);
+    n++;
+  }
+  toast(`Importadas/actualizadas ${n} filas.`);
+  $("iText").value = "";
+});
+
+$("btnImportReplace").addEventListener("click", async ()=>{
+  const fuel = $("iFuel").value;
+  const text = $("iText").value || "";
+  const rows = parseLines(text);
+  if(!rows.length){ toast("No se detectaron filas válidas."); return; }
+  if(!confirm(`Esto borrará la tabla completa de ${FUEL_LABELS[fuel]} y cargará ${rows.length} filas. ¿Continuar?`)) return;
+
+  await clearFuelTable(fuel);
+  for(const r of rows){
+    await upsertConversionRow(fuel, r.depth, r.gallons);
+  }
+  toast("Tabla reemplazada.");
+  $("iText").value = "";
+});
+
+$("btnDemo").addEventListener("click", ()=>{
+  $("iText").value =
+`0.125,1
+0.250,3
+0.375,5
+0.500,6
+9.125,255
+9.250,260
+9.375,265
+9.500,270`;
+  toast("Demo cargado.");
+});
+
+$("btnExport").addEventListener("click", async ()=>{
+  const all = await exportAll();
+  const blob = new Blob([JSON.stringify(all, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `nexus-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  toast("Backup exportado.");
+});
+
+$("fileImport").addEventListener("change", async (ev)=>{
+  const f = ev.target.files?.[0];
+  if(!f) return;
+  try{
+    const text = await f.text();
+    const data = JSON.parse(text);
+    if(!confirm("Esto restaurará tablas, historial y ajustes desde el backup. ¿Continuar?")) return;
+    await restoreAll(data);
+    toast("Backup restaurado.");
+    $("fileImport").value = "";
+  }catch(e){
+    console.error(e);
+    toast("Archivo inválido.");
+  }
+});
+
+$("btnWipeAll").addEventListener("click", async ()=>{
+  if(!confirm("Esto borrará TODAS las tablas y el historial. ¿Seguro?")) return;
+  await wipeAll();
+  toast("Todo borrado.");
+});
+
+async function exportAll(){
+  const conv = [];
+  for(const fuel of Object.keys(FUEL_LABELS)){
+    const rows = await listConversionRows(fuel);
+    conv.push({ fuel, rows });
+  }
+  const history = await listHistory();
+  const settings = await ensureSettings();
+  return { version:1, exportedAt: nowISO(), conversion: conv, history, settings };
+}
+
+async function wipeAll(){
+  // clear conversion
+  for(const fuel of Object.keys(FUEL_LABELS)){
+    await clearFuelTable(fuel);
+  }
+  await clearHistory();
+  await saveSetting(SETTINGS_DEFAULT);
+}
+
+async function restoreAll(data){
+  await wipeAll();
+  // restore conversion
+  if(Array.isArray(data?.conversion)){
+    for(const block of data.conversion){
+      const fuel = block.fuel;
+      if(!FUEL_LABELS[fuel]) continue;
+      const rows = Array.isArray(block.rows) ? block.rows : [];
+      for(const r of rows){
+        if(typeof r.depth === "number" && typeof r.gallons === "number"){
+          await upsertConversionRow(fuel, r.depth, r.gallons);
+        }
+      }
+    }
+  }
+  // restore history
+  if(Array.isArray(data?.history)){
+    for(const h of data.history){
+      if(h && h.when && h.fuel && typeof h.depth==="number" && typeof h.gallons==="number"){
+        await addHistory({
+          when: h.when,
+          fuel: h.fuel,
+          depth: h.depth,
+          gallons: h.gallons,
+          exact: h.exact ? 1 : 0
+        });
+      }
+    }
+  }
+  // restore settings
+  if(data?.settings){
+    await saveSetting({ ...SETTINGS_DEFAULT, ...data.settings });
+  }
+}
+
+/* ======= Ajustes UI ======= */
+async function loadSettingsUI(){
+  const s = await ensureSettings();
+  $("sMatchMode").value = s.matchMode || "NEAREST";
+  $("sTolerance").value = (s.tolerance ?? 0);
+}
+$("btnSaveSettings").addEventListener("click", async ()=>{
+  const matchMode = $("sMatchMode").value;
+  const tolerance = num($("sTolerance").value);
+  const val = {
+    matchMode,
+    tolerance: Number.isNaN(tolerance) ? 0 : Math.max(0, tolerance)
+  };
+  await saveSetting(val);
+  toast("Ajustes guardados.");
+});
+$("btnResetSettings").addEventListener("click", async ()=>{
+  await saveSetting(SETTINGS_DEFAULT);
+  await loadSettingsUI();
+  toast("Ajustes restablecidos.");
+});
+
+/* ======= Boot ======= */
+(async function boot(){
+  await initStorageBadge();
+  db = await openDB();
+  await ensureSettings();
+  toast("NEXUS listo (todo local).");
+})();
+</script>
+</body>
+</html>
